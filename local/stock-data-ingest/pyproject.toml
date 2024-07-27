@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "local-data-ingest"
+version = "0.1.0"
+description = "For the ingestion of local data into timescaledb"
+authors = ["zacharyrsmith99 <zachary.r.smith99@gmail.com>"]
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-dotenv = "^1.0.1"
+requests = "^2.32.3"
+pandas = "^2.2.2"
+psycopg2 = "^2.9.9"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

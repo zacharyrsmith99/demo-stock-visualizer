@@ -1,0 +1,2 @@
+TWELVEDATA_API_KEY={{TWELVEDATA_API_KEY}}
+TWELVEDATA_BASE_URL=https://api.twelvedata.com
