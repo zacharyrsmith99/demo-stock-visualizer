@@ -1,1 +1,1 @@
-Work in progress backend for webhook data ingestion.
+Work in progress backend for websocket data ingestion.
