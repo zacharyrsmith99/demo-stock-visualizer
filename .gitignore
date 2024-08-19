@@ -3,3 +3,5 @@ work_env/
 env/
 __pycache__/
 *.csv
+node_modules/
+dist/

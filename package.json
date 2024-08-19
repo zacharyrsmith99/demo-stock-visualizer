@@ -1,0 +1,40 @@
+{
+  "name": "demo-stock-visualizer-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc --sourceMap false -p tsconfig.json",
+    "start": "ts-node -r dotenv/config src/index.ts",
+    "dev": "ts-node-dev -r dotenv/config src/index.ts"
+  },
+  "keywords": [],
+  "author": "zachary.r.smith99@gmail.com",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^9.8.0",
+    "@types/express": "^4.17.21",
+    "@types/ws": "^8.5.12",
+    "eslint": "^9.8.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^15.9.0",
+    "nodemon": "^3.1.4",
+    "prettier": "^3.3.3",
+    "typescript-eslint": "^8.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zachary.r.smith99@gmail.com/demo-stock-visualizer-backend"
+  },
+  "dependencies": {
+    "@types/jsonwebtoken": "^9.0.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "lightship": "7.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4",
+    "ws": "^8.18.0"
+  }
+}
