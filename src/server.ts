@@ -3,11 +3,14 @@ import { Lightship } from "lightship";
 import http from "http";
 import createStockRelayWebSocket from "./websockets/createWebsockets";
 import { WebSocketServer } from "ws";
+import path from "path";
+import BaseLogger from "./utils/logger";
 
 export default async function createServer(kubernetesHandler: Lightship) {
+  const logger = new BaseLogger(path.join(__dirname, "app.log"));
   const app = await createApp();
   const server = http.createServer(app);
-  const stockRelay = await createStockRelayWebSocket();
+  const stockRelay = await createStockRelayWebSocket(logger);
   await stockRelay.start();
 
   const wss = new WebSocketServer({ server });

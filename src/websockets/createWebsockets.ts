@@ -1,10 +1,11 @@
+import BaseLogger from "../utils/logger";
 import CoinbaseWebsocketClient from "./coinbase";
 import StockRelay from "./stockRelay";
 import TwelvedataWebSocketClient from "./twelvedata";
 
-export default async function createStockRelayWebSocket() {
+export default async function createStockRelayWebSocket(logger: BaseLogger) {
   const twelveDataWebSocketClient = new TwelvedataWebSocketClient({
-    logger: console,
+    logger: logger,
     apiKey: process.env.TWELVEDATA_API_KEY!,
     wsUrl: process.env.TWELVEDATA_WS_URL!,
     symbolSubscriptions: ["AAPL", "QQQ", "ABML", "IXIC", "BTC/USD", "EUR/USD"],
@@ -12,7 +13,7 @@ export default async function createStockRelayWebSocket() {
   });
 
   // const coinbaseWebsocketClient = new CoinbaseWebsocketClient({
-  //   logger: console,
+  //   logger: logger,
   //   wsUrl: process.env.COINBASE_WS_URL!,
   //   symbolSubscriptions: ["ETH/USD", "DOGE/USD"],
   //   name: "coinbase",
