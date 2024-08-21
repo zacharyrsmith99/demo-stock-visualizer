@@ -30,6 +30,7 @@ jobs:
         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URL }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
+        REPO_NAME=$(echo $ECR_REPOSITORY | cut -d'/' -f2)
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
