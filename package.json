@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc --sourceMap false -p tsconfig.json",
-    "start": "ts-node -r dotenv/config src/index.ts",
-    "dev": "ts-node-dev -r dotenv/config src/index.ts"
+    "start": "ts-node -r dotenv/config src/index.ts"
   },
   "keywords": [],
   "author": "zachary.r.smith99@gmail.com",

@@ -51,8 +51,7 @@ export default class TwelvedataWebSocketClient extends BaseWebSocketClient {
       case "subscribe-status":
         break;
       case "price":
-        const priceMessage = this.dataProcessor.process(message)
-        this.emit("priceUpdate", priceMessage);
+        this.emit("priceUpdate", this.dataProcessor.process(message));
         break;
       default:
         this.logger.warn(

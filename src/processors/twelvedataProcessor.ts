@@ -18,6 +18,9 @@ export class TwelvedataProcessor extends BaseProcessor {
     const twelvedataAssetToGeneralAsset: AssetMapping = {
       "Digital Currency": AssetType.Cryptocurrency,
       Index: AssetType.Index,
+      "Physical Currency": AssetType.Currency,
+      "Common Stock": AssetType.Stock,
+      ETF: AssetType.ETF,
     };
 
     if (type in twelvedataAssetToGeneralAsset) {
