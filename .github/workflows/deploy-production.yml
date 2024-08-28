@@ -44,18 +44,6 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Send logs to EC2
-      run: |
-        aws ssm send-command \
-          --document-name "AWS-RunShellScript" \
-          --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
-          --parameters '{
-            "commands": [
-              "echo \"GitHub Actions Log: $(date)\" >> /home/ec2-user/github-actions.log",
-              "echo \"Deploying version: ${{ github.sha }}\" >> /home/ec2-user/github-actions.log"
-            ]
-          }'
-
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v3
       with:
