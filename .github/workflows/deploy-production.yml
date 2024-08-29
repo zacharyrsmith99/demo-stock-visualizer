@@ -37,7 +37,6 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
   deploy:
     needs: build
@@ -52,6 +51,9 @@ jobs:
         aws-region: ${{ secrets.AWS_REGION }}
     
     - name: Deploy to EC2 using SSM
+      env:
+        ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
       run: |
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
@@ -59,7 +61,7 @@ jobs:
           --parameters '{
             "commands": [
               "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}",
-              "docker pull ${{ needs.build.outputs.image_uri }}",
+              "docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest",
               "docker stop stockzrs-container || true",
               "docker rm stockzrs-container || true",
               "docker run -d --name stockzrs-container -p ${{ secrets.STOCKZRS_PORT }}:${{ secrets.STOCKZRS_PORT }} ${{ needs.build.outputs.image_uri }}"
