@@ -55,15 +55,21 @@ jobs:
         ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
       run: |
-        aws ssm send-command \
-          --document-name "AWS-RunShellScript" \
-          --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
-          --parameters '{
-            "commands": [
-              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}",
-              "docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest",
-              "docker stop stockzrs-container || true",
-              "docker rm stockzrs-container || true",
-              "docker run -d --name stockzrs-container -p ${{ secrets.STOCKZRS_PORT }}:${{ secrets.STOCKZRS_PORT }} ${{ needs.build.outputs.image_uri }}"
-            ]
-          }'
+      DOCKER_LOGIN_CMD="aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+      DOCKER_PULL_CMD="docker pull ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+      DOCKER_STOP_CMD="docker stop stockzrs-container || true"
+      DOCKER_RM_CMD="docker rm stockzrs-container || true"
+      DOCKER_RUN_CMD="docker run -d --name stockzrs-container -p ${{ secrets.STOCKZRS_PORT }}:${{ secrets.STOCKZRS_PORT }} ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+      
+      aws ssm send-command \
+        --document-name "AWS-RunShellScript" \
+        --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+        --parameters '{
+          "commands": [
+            "'${DOCKER_LOGIN_CMD}'",
+            "'${DOCKER_PULL_CMD}'",
+            "'${DOCKER_STOP_CMD}'",
+            "'${DOCKER_RM_CMD}'",
+            "'${DOCKER_RUN_CMD}'"
+          ]
+        }'
