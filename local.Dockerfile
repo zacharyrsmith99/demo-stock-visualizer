@@ -12,8 +12,8 @@ COPY .env .env
 
 RUN npm run build
 
-EXPOSE 8000
+EXPOSE 80
 
-ENV PORT=8000
+ENV PORT=80
 
 CMD ["node", "dist/index.js"]
