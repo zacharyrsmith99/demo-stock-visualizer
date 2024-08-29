@@ -21,9 +21,9 @@ COPY --from=builder /usr/src/app/.env.tpl ./.env.tpl
 
 RUN npm install --only=production
 
-EXPOSE 8000
+EXPOSE 80
 
-ENV PORT=8000
+ENV PORT=80
 
 # Install AWS CLI for secrets management
 RUN apt-get update && apt-get install -y \

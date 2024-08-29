@@ -62,7 +62,7 @@
   
             DOCKER_RM_CMD="docker rm stockzrs-container || true"
   
-            DOCKER_RUN_CMD="docker run -d --name stockzrs-container -p ${{ secrets.STOCKZRS_PORT }}:${{ secrets.STOCKZRS_PORT }} ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+            DOCKER_RUN_CMD="docker run -d --name stockzrs-container -p ${{ secrets.STOCKZRS_RELAY_PORT }}:${{ secrets.STOCKZRS_RELAY_PORT }} ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
   
   
             aws ssm send-command \
