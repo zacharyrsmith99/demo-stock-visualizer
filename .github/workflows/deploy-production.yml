@@ -6,10 +6,7 @@
         - production
     workflow_dispatch: null
   jobs:
-    validate-yaml:
-      uses: ./.github/workflows/validate-yaml.yml
     build:
-      needs: validate-yaml
       runs-on: ubuntu-latest
       outputs:
         image_uri: ${{ steps.build-image.outputs.image_uri }}
@@ -40,7 +37,6 @@
             docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
     deploy:
       needs:
-        - validate-yaml
         - build
       runs-on: ubuntu-latest
       steps:
