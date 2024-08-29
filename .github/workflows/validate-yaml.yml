@@ -1,19 +1,19 @@
-name: Validate-YAML
-
-on:
-  push:
-    branches:
-      - '**'
-  pull_request:
-    branches:
-      - '**'
-
-jobs:
-  validate-yaml:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install yamllint
-        run: pip install yamllint
-      - name: Validate YAML files
-        run: yamllint .
+---
+    name: Validate-YAML
+    on:
+      push:
+        branches:
+          - "**"
+      pull_request:
+        branches:
+          - "**"
+    jobs:
+      validate-yaml:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v3
+          - name: Install yamllint
+            run: pip install yamllint
+          - name: Validate YAML files
+            run: yamllint .
+    
