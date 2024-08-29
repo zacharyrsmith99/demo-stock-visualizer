@@ -1,66 +1,66 @@
 name: Deploy to Production
+   on:
+     push:
+       branches:
+         - production
+     workflow_dispatch:
+   jobs:
+     build:
+       runs-on: ubuntu-latest
+       outputs:
+         image_uri: ${{ steps.build-image.outputs.image_uri }}
+      
+       steps:
+       - name: Checkout code
+         uses: actions/checkout@v3
+      
+       - name: Configure AWS credentials
+         uses: aws-actions/configure-aws-credentials@v3
+         with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: ${{ secrets.AWS_REGION }}
+      
+       - name: Login to Amazon ECR
+         id: login-ecr
+         uses: aws-actions/amazon-ecr-login@v1
+      
+       - name: Build, tag, and push image to Amazon ECR
+         id: build-image
+         env:
+           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+           IMAGE_TAG: ${{ github.sha }}
+         run: |
+           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+           echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-on:
-  push:
-    branches:
-      - production
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    outputs:
-      image_uri: ${{ steps.build-image.outputs.image_uri }}
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v3
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-    
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-    
-    - name: Build, tag, and push image to Amazon ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v3
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-    
-    - name: Deploy to EC2 using SSM
-      run: |
-        aws ssm send-command \
-          --document-name "AWS-RunShellScript" \
-          --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
-          --parameters '{
-            "commands": [
-              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}",
-              "docker pull ${{ needs.build.outputs.image_uri }}",
-              "docker stop stockzrs-container || true",
-              "docker rm stockzrs-container || true",
-              "docker run -d --name stockzrs-container -p ${{ secrets.STOCKZRS_PORT }}:${{ secrets.STOCKZRS_PORT }} ${{ needs.build.outputs.image_uri }}"
-            ]
-          }'
+     deploy:
+       needs: build
+       runs-on: ubuntu-latest
+      
+       steps:
+       - name: Configure AWS credentials
+         uses: aws-actions/configure-aws-credentials@v3
+         with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: ${{ secrets.AWS_REGION }}
+      
+       - name: Deploy to EC2 using SSM
+         run: |
+           aws ssm send-command \
+             --document-name "AWS-RunShellScript" \
+             --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+             --parameters '{
+               "commands": [
+                 "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ needs.build.outputs.image_uri }}",
+                 "docker pull ${{ needs.build.outputs.image_uri }}",
+                 "docker stop stockzrs-container || true",
+                 "docker rm stockzrs-container || true",
+                 "docker run -d --name stockzrs-container -p ${{ secrets.STOCKZRS_PORT }}:${{ secrets.STOCKZRS_PORT }} ${{ needs.build.outputs.image_uri }}"
+               ]
+             }'
