@@ -1,0 +1,93 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - production
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.27.0'
+
+    - name: Update kubeconfig
+      run: |
+        aws eks get-token --cluster-name ${{ secrets.AWS_STOCKZRS_KUBERNETES_CLUSTER_NAME }} | kubectl apply -f -
+
+    - name: Deploy to EKS
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        export AWS_DEFAULT_REGION=us-east-1
+        export PORT=$(aws secretsmanager get-secret-value --secret-id stockzrs-relay-secrets1 --query SecretString --output text | grep -o '"PORT":"[^"]*' |  grep -o '[^"]*$')
+        export NODE_ENV=$(aws secretsmanager get-secret-value --secret-id stockzrs-relay-secrets1 --query SecretString --output text | grep -o '"NODE_ENV":"[^"]*' | grep -o '[^"]*$')
+        export LOG_LEVEL=$(aws secretsmanager get-secret-value --secret-id stockzrs-relay-secrets1 --query SecretString --output text | grep -o '"LOG_LEVEL":"[^"]*' | grep -o '[^"]*$')
+        export ENVIRONMENT=$(aws secretsmanager get-secret-value --secret-id stockzrs-relay-secrets1 --query SecretString --output text | grep -o '"ENVIRONMENT":"[^"]*' | grep -o '[^"]*$')
+        export TWELVEDATA_API_KEY=$(aws secretsmanager get-secret-value --secret-id stockzrs-relay-secrets1 --query SecretString --output text | grep -o '"TWELVEDATA_API_KEY":"[^"]*' | grep -o '[^"]*$')
+        export TWELVEDATA_WS_URL=$(aws secretsmanager get-secret-value --secret-id stockzrs-relay-secrets1 --query SecretString --output text | grep -o '"TWELVEDATA_WS_URL":"[^"]*' | grep -o '[^"]*$')
+        export COINBASE_WS_URL=$(aws secretsmanager get-secret-value --secret-id stockzrs-relay-secrets1 --query SecretString --output text | grep -o '"COINBASE_WS_URL":"[^"]*' | grep -o '[^"]*$')
+        export COINBASE_API_KEY=$(aws secretsmanager get-secret-value --secret-id stockzrs-relay-secrets1 --query SecretString --output text | grep -o '"COINBASE_API_KEY":"[^"]*' | grep -o '[^"]*$')
+        export COINBASE_API_PRIVATE_KEY=$(aws secretsmanager get-secret-value --secret-id stockzrs-relay-secrets1 --query SecretString --output text | grep -o '"COINBASE_API_PRIVATE_KEY":"[^"]*' | grep -o '[^"]*$')
+        
+        sed -e 's|${ECR_REGISTRY}|'"$ECR_REGISTRY"'|g' \
+            -e 's|${ECR_REPOSITORY}|'"$ECR_REPOSITORY"'|g' \
+            -e 's|${IMAGE_TAG}|'"$IMAGE_TAG"'|g' \
+            -e 's|${PORT}|'"$PORT"'|g' \
+            -e 's|${NODE_ENV}|'"$NODE_ENV"'|g' \
+            -e 's|${LOG_LEVEL}|'"$LOG_LEVEL"'|g' \
+            -e 's|${ENVIRONMENT}|'"$ENVIRONMENT"'|g' \
+            -e 's|${TWELVEDATA_API_KEY}|'"$TWELVEDATA_API_KEY"'|g' \
+            -e 's|${TWELVEDATA_WS_URL}|'"$TWELVEDATA_WS_URL"'|g' \
+            -e 's|${COINBASE_WS_URL}|'"$COINBASE_WS_URL"'|g' \
+            -e 's|${COINBASE_API_KEY}|'"$COINBASE_API_KEY"'|g' \
+            -e 's|${COINBASE_API_PRIVATE_KEY}|'"$COINBASE_API_PRIVATE_KEY"'|g' \
+            k8s/stockzrs-relay-service-deployment.yml | kubectl apply -f -
+
+        kubectl rollout status deployment/stockzrs-relay

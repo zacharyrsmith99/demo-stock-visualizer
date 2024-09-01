@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stockzrs-relay
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stockzrs-relay
+  template:
+    metadata:
+      labels:
+        app: stockzrs-relay
+    spec:
+      containers:
+      - name: stockzrs-relay
+        image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
+        ports:
+        - containerPort: 80
+        envFrom:
+        - secretRef:
+            name: stockzrs-relay-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stockzrs-relay-service
+spec:
+  selector:
+    app: stockzrs-relay
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: stockzrs-relay-secrets
+type: Opaque
+stringData:
+  PORT: "${PORT}"
+  NODE_ENV: "${NODE_ENV}"
+  LOG_LEVEL: "${LOG_LEVEL}"
+  ENVIRONMENT: "${ENVIRONMENT}"
+  TWELVEDATA_API_KEY: "${TWELVEDATA_API_KEY}"
+  TWELVEDATA_WS_URL: "${TWELVEDATA_WS_URL}"
+  COINBASE_WS_URL: "${COINBASE_WS_URL}"
+  COINBASE_API_KEY: "${COINBASE_API_KEY}"
+  COINBASE_API_PRIVATE_KEY: "${COINBASE_API_PRIVATE_KEY}"
