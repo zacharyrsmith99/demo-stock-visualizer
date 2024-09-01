@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - develop
-    paths:
-      - 'src/**' 
   workflow_dispatch:
 
 env:
@@ -22,8 +20,8 @@ jobs:
       - name: Check for changes in src directory
         id: check_src
         run: |
-          git fetch origin production
-          if git diff --quiet origin/production HEAD -- src/; then
+          git fetch origin develop
+          if git diff --quiet origin/develop HEAD -- src/; then
             echo "src_changed=false" >> $GITHUB_OUTPUT
           else
             echo "src_changed=true" >> $GITHUB_OUTPUT
