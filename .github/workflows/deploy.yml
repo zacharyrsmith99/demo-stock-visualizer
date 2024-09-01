@@ -11,24 +11,7 @@ env:
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
 
 jobs:
-  configure-aws-and-ecr:
-    runs-on: ubuntu-latest
-    outputs:
-      ecr_registry: ${{ steps.login-ecr.outputs.registry }}
-    steps:
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v3
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
   check-changes:
-    needs: configure-aws-and-ecr
     runs-on: ubuntu-latest
     outputs:
       src_changed: ${{ steps.check_src.outputs.src_changed }}
@@ -45,10 +28,21 @@ jobs:
           fi
 
   build-and-push:
-    needs: [configure-aws-and-ecr, check-changes]
+    needs: [check-changes]
     if: needs.check-changes.outputs.src_changed == 'true'
     runs-on: ubuntu-latest
     steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
     - name: Checkout code
       uses: actions/checkout@v3
 
@@ -62,12 +56,23 @@ jobs:
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
   deploy:
-    needs: [check-changes, build-and-push, configure-aws-and-ecr]
+    needs: [check-changes, build-and-push]
     if: always()
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
 
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
