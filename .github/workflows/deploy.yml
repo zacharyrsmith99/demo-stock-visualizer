@@ -81,7 +81,7 @@ jobs:
 
     - name: Update kubeconfig
       run: |
-        aws eks update-kubeconfig --name ${{ secrets.AWS_STOCKZRS_KUBERNETES_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+        aws eks update-kubeconfig --name eks --region ${{ env.AWS_REGION }}
   
     - name: Deploy to EKS
       env:
