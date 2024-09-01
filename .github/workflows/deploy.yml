@@ -58,7 +58,8 @@ jobs:
 
     - name: Update kubeconfig
       run: |
-        aws eks get-token --cluster-name ${{ secrets.AWS_STOCKZRS_KUBERNETES_CLUSTER_NAME }} | kubectl apply -f -
+        aws eks get-token --cluster-name ${{ secrets.AWS_STOCKZRS_KUBERNETES_CLUSTER_NAME }} >> $GITHUB_OUTPUT
+        aws eks update-kubeconfig --name ${{ secrets.AWS_STOCKZRS_KUBERNETES_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
     - name: Deploy to EKS
       env:
