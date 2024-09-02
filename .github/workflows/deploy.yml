@@ -83,9 +83,7 @@ jobs:
 
     - name: Update kube config
       run: |
-        aws eks get-token --cluster-name eks | jq
         aws eks update-kubeconfig --name eks --region $AWS_REGION
-        kubectl config view --raw
   
     - name: Deploy to EKS
       env:
