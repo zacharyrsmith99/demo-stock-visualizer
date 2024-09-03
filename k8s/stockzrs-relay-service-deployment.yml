@@ -25,6 +25,9 @@ kind: Service
 metadata:
   name: stockzrs-relay-service
   namespace: stockzrs-relay-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
 spec:
   selector:
     app: stockzrs-relay-service
