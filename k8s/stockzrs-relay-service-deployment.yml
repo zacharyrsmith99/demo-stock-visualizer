@@ -5,14 +5,14 @@ metadata:
   name: stockzrs-relay-service
   namespace: stockzrs-relay-service
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: stockzrs-relay-service
   template:
     metadata:
       labels:
-        app: sstockzrs-relay-service
+        app: stockzrs-relay-service
     spec:
       containers:
       - name: stockzrs-relay-service
