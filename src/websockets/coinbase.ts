@@ -40,9 +40,9 @@ export default class CoinbaseWebsocketClient extends BaseWebSocketClient {
     // }
   }
 
-  protected setupEventListeners(): void {
-    super.setupEventListeners();
+  public async start() {}
 
+  protected setupEventListeners(): void {
     this.ws.on("open", () => {
       this.logger.info(`WebSocket opened for ${this.getName()}`);
       this.subscribeToSymbols(this.symbolSubscriptions);
