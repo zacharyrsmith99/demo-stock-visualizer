@@ -2,9 +2,10 @@ import WebSocket from "ws";
 import { EventEmitter } from "events";
 import { BaseProcessor } from "../processors/baseProcessor";
 import getDataProcessor from "../processors/getDataProcessor";
+import BaseLogger from "../utils/logger";
 
 export interface BaseWebSocketClientParams {
-  logger: any;
+  logger: BaseLogger;
   apiKey: string;
   wsUrl: string;
   symbolSubscriptions: string[];
@@ -13,76 +14,43 @@ export interface BaseWebSocketClientParams {
 }
 
 export abstract class BaseWebSocketClient extends EventEmitter {
-  protected ws: WebSocket;
-  protected apiKey: string | undefined;
-  protected logger: any;
+  protected ws!: WebSocket;
+  protected apiKey: string;
+  protected logger: BaseLogger;
   protected symbolSubscriptions: string[];
   protected name: string;
   protected dataProcessor: BaseProcessor;
+  protected wsUrl: string;
+  protected wsOptions?: WebSocket.ClientOptions;
 
   constructor(params: BaseWebSocketClientParams) {
     super();
     this.apiKey = params.apiKey;
     this.logger = params.logger;
     this.symbolSubscriptions = params.symbolSubscriptions;
-
-    this.logger.info(`Connecting to WebSocket URL: ${params.wsUrl}`);
-
     this.dataProcessor = getDataProcessor(params.name, this.logger);
-
-    this.ws = new WebSocket(params.wsUrl, params.wsOptions);
-
-    this.setupEventListeners();
-
+    this.wsUrl = params.wsUrl;
     this.name = params.name;
+    this.wsOptions = params.wsOptions;
   }
 
   public getName(): string {
     return this.name;
   }
 
-  protected setupEventListeners(): void {
-    this.ws.on("message", (data: WebSocket.Data) => {
-      this.handleMessage(data);
-    });
-
-    this.ws.on("error", (error: Error) => {
-      this.emit("error", `WebSocket Error: ${error}`);
-    });
-
-    this.ws.on("close", () => {
-      this.emit("close");
-    });
-  }
+  protected abstract setupEventListeners(): void;
 
   protected abstract startHealthcheck(): void;
 
-  public async start(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("Connection timeout"));
-      }, 10000);
-
-      this.ws.once("open", async () => {
-        clearTimeout(timeout);
-        this.logger.info(
-          `Connected to external WebSocket (${this.getName()}) successfully!`,
-        );
-        this.startHealthcheck();
-        this.subscribeToSymbols(this.symbolSubscriptions);
-        resolve();
-      });
-
-      this.ws.once("error", (error) => {
-        clearTimeout(timeout);
-        reject(error);
-      });
-    });
-  }
+  public abstract start(): Promise<void>;
 
   protected abstract handleMessage(data: WebSocket.Data): void;
 
   public abstract subscribeToSymbols(symbols: string[]): Promise<void>;
+
+  public getSymbolSubscriptions(): string[] {
+    return this.symbolSubscriptions;
+  }
 
   public async close(): Promise<void> {
     return new Promise<void>((resolve, reject) => {

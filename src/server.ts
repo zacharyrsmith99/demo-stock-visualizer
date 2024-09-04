@@ -11,7 +11,6 @@ export default async function createServer(kubernetesHandler: Lightship) {
   const app = await createApp();
   const server = http.createServer(app);
   const stockRelay = await createStockRelayWebSocket(logger);
-  await stockRelay.start();
 
   const wss = new WebSocketServer({ server });
 
@@ -20,7 +19,7 @@ export default async function createServer(kubernetesHandler: Lightship) {
 
     const handlePriceUpdate = (data: any) => {
       if (ws.readyState === ws.OPEN) {
-        ws.send(JSON.stringify({ data }));
+        ws.send(JSON.stringify(data));
       }
     };
 

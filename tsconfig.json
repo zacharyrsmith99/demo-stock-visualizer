@@ -9,6 +9,7 @@
     "moduleResolution": "node",
     "outDir": "./dist",
     "sourceMap": false,
+    
   },
   "exclude": ["node_modules", "dist"]
 }
