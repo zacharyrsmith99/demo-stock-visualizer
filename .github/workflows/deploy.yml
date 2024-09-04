@@ -92,6 +92,6 @@ jobs:
       run: |
           sed -i 's|image: .*|image: '"$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"'|' k8s/stockzrs-relay-service-deployment.yml
     
-          kubectl apply -f k8s/stockzrs-relay-service-deployment.yml
+          kubectl apply -f k8s/stockzrs-relay-service-deployment.yml -n stockzrs-relay-service
 
-          kubectl rollout restart deployment/stockzrs-relay-service
+          kubectl rollout restart deployment/stockzrs-relay-service -n stockzrs-relay-service
