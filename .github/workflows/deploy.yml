@@ -88,11 +88,14 @@ jobs:
   
     - name: Deploy to EKS
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: "latest"
+        IMAGE: ${{ needs.build-and-push.outputs.image }}
       run: |
-          sed -i 's|image: .*|image: '"$IMAGE"'|' k8s/stockzrs-relay-service-deployment.yml
-    
+          if [ -n "$IMAGE" ]; then
+            sed -i 's|image: .*|image: '"$IMAGE"'|' k8s/stockzrs-relay-service-deployment.yml
+          else
+            echo "No new image built, using existing deployment configuration."
+          fi
+          
           kubectl apply -f k8s/stockzrs-relay-service-deployment.yml -n stockzrs-relay-service
 
           kubectl rollout restart deployment/stockzrs-relay-service -n stockzrs-relay-service
