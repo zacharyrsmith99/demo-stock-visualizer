@@ -33,6 +33,7 @@ jobs:
 
   build-and-push:
     needs: [check-changes]
+    if: needs.check-changes.outputs.src_changed == 'true'
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build-image.outputs.image }}
@@ -89,13 +90,16 @@ jobs:
     - name: Deploy to EKS
       env:
         IMAGE: ${{ needs.build-and-push.outputs.image }}
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
           if [ -n "$IMAGE" ]; then
             sed -i 's|image: .*|image: '"$IMAGE"'|' k8s/stockzrs-relay-service-deployment.yml
           else
-            echo "No new image built, using existing deployment configuration."
+            # If no new image was built, use the latest image from ECR
+            LATEST_IMAGE=$(aws ecr describe-images --repository-name $ECR_REPOSITORY --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' --output text)
+            sed -i 's|image: .*|image: '"$ECR_REGISTRY/$ECR_REPOSITORY:$LATEST_IMAGE"'|' k8s/stockzrs-relay-service-deployment.yml
           fi
-          
+
           kubectl apply -f k8s/stockzrs-relay-service-deployment.yml -n stockzrs-relay-service
 
           kubectl rollout restart deployment/stockzrs-relay-service -n stockzrs-relay-service

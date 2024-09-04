@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: stockzrs-relay-service
-        image: ${IMAGE}
+        image: PLACEHOLDER_IMAGE
         imagePullPolicy: Always
         ports:
         - containerPort: 80
