@@ -103,7 +103,7 @@ export default class TwelvedataWebSocketClient extends BaseWebSocketClient {
 
   private checkHeartbeatResponse(): void {
     const currentTime = Date.now();
-    if (currentTime - this.lastHeartbeatResponse > 1000) {
+    if (currentTime - this.lastHeartbeatResponse > 30000) {
       this.logger.error(
         "No heartbeat response received in the last 30 seconds",
       );

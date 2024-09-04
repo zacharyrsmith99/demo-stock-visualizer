@@ -33,7 +33,6 @@ jobs:
 
   build-and-push:
     needs: [check-changes]
-    if: needs.check-changes.outputs.src_changed == 'true'
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build-image.outputs.image }}
