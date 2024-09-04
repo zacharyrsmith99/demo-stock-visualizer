@@ -33,8 +33,9 @@ jobs:
 
   build-and-push:
     needs: [check-changes]
-    if: needs.check-changes.outputs.src_changed == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
     steps:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -90,7 +91,7 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: "latest"
       run: |
-          sed -i 's|image: .*|image: '"$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"'|' k8s/stockzrs-relay-service-deployment.yml
+          sed -i 's|image: .*|image: '"$IMAGE"'|' k8s/stockzrs-relay-service-deployment.yml
     
           kubectl apply -f k8s/stockzrs-relay-service-deployment.yml -n stockzrs-relay-service
 
