@@ -17,6 +17,7 @@ spec:
       containers:
       - name: stockzrs-relay-service
         image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
 ---
