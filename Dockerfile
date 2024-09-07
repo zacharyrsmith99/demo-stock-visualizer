@@ -25,18 +25,6 @@ EXPOSE 80
 
 ENV PORT=80
 
-# Install AWS CLI for secrets management
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-venv \
-    python3-pip \
-    gettext-base
-
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-RUN pip3 install --no-cache-dir awscli
-
 COPY start.sh .
 RUN chmod +x start.sh
 
