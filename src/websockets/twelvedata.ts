@@ -43,6 +43,7 @@ export default class TwelvedataWebSocketClient extends BaseWebSocketClient {
           this.setupEventListeners();
           this.startHealthcheck();
           this.reconnectAttempts = 0;
+
           resolve();
         });
 
@@ -69,13 +70,27 @@ export default class TwelvedataWebSocketClient extends BaseWebSocketClient {
     });
   }
 
+  private async reconnect() {
+    await this.close();
+    await this.start();
+    await this.subscribeToSymbols();
+  }
+
   protected setupEventListeners(): void {
     this.ws.on("message", (data: WebSocket.Data) => {
       this.handleMessage(data);
     });
 
-    this.ws.on("close", () => {
-      this.logger.info(`WebSocket connection closed for ${this.getName()}`);
+    this.ws.on("close", (code: number, reason: string) => {
+      this.logger.info(
+        `WebSocket connection closed for ${this.getName()}. Code: ${code}, Reason: ${reason}`,
+      );
+      if (code === 1006) {
+        this.logger.error(
+          `Unexpected closure code (${code}) received! Attempting to reconnect websocket...`,
+        );
+        this.reconnect();
+      }
     });
 
     this.ws.on("error", (error: Error) => {
@@ -136,7 +151,7 @@ export default class TwelvedataWebSocketClient extends BaseWebSocketClient {
         break;
       default:
         this.logger.warn(
-          `External Websocket Client (${this.getName()}) received unexpected event: (${event}), message: (${message})`,
+          `External Websocket Client (${this.getName()}) received unexpected event: (${event}), message: (${JSON.stringify(message)})`,
         );
     }
   }

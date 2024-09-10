@@ -1,7 +1,25 @@
 import BaseLogger from "../utils/logger";
 import StockRelay from "./stockRelay";
+import { Kafka } from "kafkajs";
 
 export default async function createStockRelayWebSocket(logger: BaseLogger) {
+  const brokers = process.env.KAFKA_BROKER
+    ? [process.env.KAFKA_BROKER_URL!]
+    : ["localhost:9092"];
+
+  const kafka = new Kafka({
+    clientId: "stockzrs-relay-service",
+    brokers: brokers,
+    connectionTimeout: 3000,
+    retry: {
+      initialRetryTime: 100,
+      retries: 8,
+    },
+  });
+
+  const producer = kafka.producer();
+  await producer.connect();
+
   const twelveDataWebSocketClientParams = {
     logger: logger,
     apiKey: process.env.TWELVEDATA_API_KEY!,
@@ -9,6 +27,7 @@ export default async function createStockRelayWebSocket(logger: BaseLogger) {
     symbolSubscriptions: ["AAPL", "QQQ", "ABML", "IXIC", "BTC/USD", "EUR/USD"],
     name: "twelvedata",
   };
+
   // const coinbaseWebsocketClient = new CoinbaseWebsocketClient({
   //   logger: logger,
   //   wsUrl: process.env.COINBASE_WS_URL!,
@@ -18,7 +37,7 @@ export default async function createStockRelayWebSocket(logger: BaseLogger) {
   //   signingKey: process.env.COINBASE_API_PRIVATE_KEY!,
   // });
 
-  const stockRelay = new StockRelay(logger);
+  const stockRelay = new StockRelay(logger, producer);
 
   stockRelay.addExternalClient("twelvedata", twelveDataWebSocketClientParams);
   // stockRelay.addExternalClient(coinbaseWebsocketClient);

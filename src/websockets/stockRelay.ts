@@ -3,8 +3,11 @@ import {
   BaseWebSocketClient,
   BaseWebSocketClientParams,
 } from "./externalWebSocketClientBase";
+import { Producer } from "kafkajs";
 import BaseLogger from "../utils/logger";
 import getWebSocketClient from "./getWebSocketClient";
+import { ProcessedStockData } from "../types/stockDataTypes";
+import { DateTime } from "luxon";
 
 interface ExternalClient {
   client: BaseWebSocketClient;
@@ -18,10 +21,12 @@ interface ExternalClients {
 export default class StockRelay extends EventEmitter {
   private externalClients: ExternalClients = {};
   private logger: BaseLogger;
+  private kafkaProducer: Producer;
 
-  constructor(logger: BaseLogger) {
+  constructor(logger: BaseLogger, kafkaProducer: Producer) {
     super();
     this.logger = logger;
+    this.kafkaProducer = kafkaProducer;
   }
 
   async addExternalClient(
@@ -57,11 +62,35 @@ export default class StockRelay extends EventEmitter {
     }
   }
 
-  async handlePriceUpdate(clientName: string, data: any) {
+  private generateKafkaKey(data: ProcessedStockData): string {
+    const dateTime = DateTime.fromMillis(data.timestamp * 1000);
+    return `${dateTime.toFormat("yyyy-MM-dd HH:mm")}.${data.symbol}`;
+  }
+
+  async handlePriceUpdate(clientName: string, data: ProcessedStockData) {
     this.logger.debug(
       `Price update from ${clientName}: ${JSON.stringify(data)}`,
     );
     this.emit("priceUpdate", data);
+
+    const key = this.generateKafkaKey(data);
+
+    try {
+      await this.kafkaProducer.send({
+        topic: "raw-financial-updates",
+        messages: [
+          {
+            key: key,
+            value: JSON.stringify(data),
+          },
+        ],
+      });
+      this.logger.debug(`Sent raw financial data to Kafka with key: ${key}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send raw financial data to Kafka with key ${key}: ${error}`,
+      );
+    }
   }
 
   async handleHealthcheck(clientName: string, data: any) {

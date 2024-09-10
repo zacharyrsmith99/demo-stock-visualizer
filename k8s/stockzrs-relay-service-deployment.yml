@@ -14,6 +14,8 @@ spec:
       labels:
         app: stockzrs-relay-service
     spec:
+      nodeSelector:
+        role: general
       containers:
       - name: stockzrs-relay-service
         image: PLACEHOLDER_IMAGE

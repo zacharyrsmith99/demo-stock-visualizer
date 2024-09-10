@@ -10,29 +10,34 @@ enum LogLevel {
 
 class BaseLogger {
   private logStream: fs.WriteStream;
-  private currentLogLevel: LogLevel;
+  private consoleLogLevel: LogLevel;
+  private writeLogLevel: LogLevel;
 
   constructor(logFilePath: string) {
     this.logStream = fs.createWriteStream(path.resolve(logFilePath), {
       flags: "a",
     });
-    this.currentLogLevel = LogLevel.DEBUG; // Set default log level
+    this.consoleLogLevel =
+      (process.env.CONSOLE_LOG_LEVEL as unknown as LogLevel) || LogLevel.INFO;
+    this.writeLogLevel =
+      (process.env.WRITE_LOG_LEVEL as unknown as LogLevel) || LogLevel.INFO;
   }
 
   setLogLevel(level: keyof typeof LogLevel): void {
     // eslint-disable-next-line no-prototype-builtins
     if (LogLevel.hasOwnProperty(level)) {
-      this.currentLogLevel = LogLevel[level];
+      this.consoleLogLevel = LogLevel[level];
     } else {
       throw new Error(`Invalid log level: ${level}`);
     }
   }
 
   private log(level: keyof typeof LogLevel, message: string): void {
-    if (LogLevel[level] >= this.currentLogLevel) {
+    if (LogLevel[level] >= this.consoleLogLevel) {
       const timestamp = new Date().toISOString();
       const logMessage = `${timestamp} [${level}] ${message}\n`;
-      this.logStream.write(logMessage);
+      if (LogLevel[level] >= this.writeLogLevel)
+        this.logStream.write(logMessage);
       console.log(logMessage);
     }
   }
@@ -51,11 +56,6 @@ class BaseLogger {
 
   error(message: string): void {
     this.log("ERROR", message);
-  }
-
-  // Custom method for WebSocket messages
-  message(message: string): void {
-    this.log("INFO", `WebSocket message: ${message}`);
   }
 }
 
