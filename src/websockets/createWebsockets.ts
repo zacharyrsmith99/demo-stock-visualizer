@@ -3,7 +3,7 @@ import StockRelay from "./stockRelay";
 import { Kafka } from "kafkajs";
 
 export default async function createStockRelayWebSocket(logger: BaseLogger) {
-  const brokers = process.env.KAFKA_BROKER
+  const brokers = process.env.KAFKA_BROKER_URL
     ? [process.env.KAFKA_BROKER_URL!]
     : ["localhost:9092"];
 
