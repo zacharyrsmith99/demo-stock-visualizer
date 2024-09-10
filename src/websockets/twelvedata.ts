@@ -10,6 +10,7 @@ export default class TwelvedataWebSocketClient extends BaseWebSocketClient {
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private reconnectDelay: number = 10000;
+  private isReconnecting: boolean = false;
 
   constructor(params: BaseWebSocketClientParams) {
     if (!params.apiKey) {
@@ -71,9 +72,27 @@ export default class TwelvedataWebSocketClient extends BaseWebSocketClient {
   }
 
   private async reconnect() {
-    await this.close();
-    await this.start();
-    await this.subscribeToSymbols();
+    if (this.isReconnecting) {
+      this.logger.info(
+        "Reconnection already in progress. Skipping this attempt.",
+      );
+      return;
+    }
+
+    this.isReconnecting = true;
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await this.close();
+      await this.start();
+      await this.subscribeToSymbols();
+      this.logger.info("Reconnection successful");
+    } catch (error) {
+      this.logger.error(`Reconnection failed: ${error}`);
+      setTimeout(() => this.reconnect(), 2000);
+    } finally {
+      this.isReconnecting = false;
+    }
   }
 
   protected setupEventListeners(): void {
@@ -89,7 +108,7 @@ export default class TwelvedataWebSocketClient extends BaseWebSocketClient {
         this.logger.error(
           `Unexpected closure code (${code}) received! Attempting to reconnect websocket...`,
         );
-        this.reconnect();
+        setTimeout(() => this.reconnect(), 2000);
       }
     });
 
