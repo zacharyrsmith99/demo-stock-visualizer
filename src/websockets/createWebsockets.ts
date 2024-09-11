@@ -10,11 +10,11 @@ export default async function createStockRelayWebSocket(logger: BaseLogger) {
   const kafka = new Kafka({
     clientId: "stockzrs-relay-service",
     brokers: brokers,
-    sasl: {
-      mechanism: "scram-sha-512",
-      username: process.env.KAFKA_USERNAME!,
-      password: process.env.KAFKA_PASSWORD!,
-    },
+    // sasl: {
+    //   mechanism: "scram-sha-512",
+    //   username: process.env.KAFKA_USERNAME!,
+    //   password: process.env.KAFKA_PASSWORD!,
+    // },
     connectionTimeout: 3000,
     retry: {
       initialRetryTime: 100,
