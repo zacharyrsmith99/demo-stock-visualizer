@@ -11,6 +11,7 @@ export interface BaseWebSocketClientParams {
   symbolSubscriptions: string[];
   name: string;
   wsOptions?: WebSocket.ClientOptions;
+  maxListeners?: number;
 }
 
 export abstract class BaseWebSocketClient extends EventEmitter {
@@ -22,6 +23,7 @@ export abstract class BaseWebSocketClient extends EventEmitter {
   protected dataProcessor: BaseProcessor;
   protected wsUrl: string;
   protected wsOptions?: WebSocket.ClientOptions;
+  private logListenersIntervalId: NodeJS.Timeout | null = null;
 
   constructor(params: BaseWebSocketClientParams) {
     super();
@@ -32,10 +34,40 @@ export abstract class BaseWebSocketClient extends EventEmitter {
     this.wsUrl = params.wsUrl;
     this.name = params.name;
     this.wsOptions = params.wsOptions;
+    this.setMaxListeners(50);
+    this.startPeriodicListenerLogging(5 * 60 * 1000);
   }
 
   public getName(): string {
     return this.name;
+  }
+
+  private startPeriodicListenerLogging(intervalMs: number): void {
+    this.logListenersIntervalId = setInterval(() => {
+      this.logAllListeners();
+    }, intervalMs);
+  }
+
+  private logAllListeners(): void {
+    const events = this.eventNames();
+    this.logger.info(`Current listeners for ${this.name}:`);
+    events.forEach((event) => {
+      const eventName = typeof event === "string" ? event : String(event);
+      const listeners = this.listeners(event);
+      this.logger.info(`  ${eventName}: ${listeners.length} listener(s)`);
+      listeners.forEach((listener, index) => {
+        this.logger.info(
+          `    Listener ${index + 1}: ${listener.name || "Anonymous"}`,
+        );
+      });
+    });
+  }
+
+  public stopPeriodicListenerLogging(): void {
+    if (this.logListenersIntervalId) {
+      clearInterval(this.logListenersIntervalId);
+      this.logListenersIntervalId = null;
+    }
   }
 
   protected abstract setupEventListeners(): void;
@@ -54,6 +86,8 @@ export abstract class BaseWebSocketClient extends EventEmitter {
 
   public async close(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
+      this.stopPeriodicListenerLogging();
+
       if (this.ws.readyState === WebSocket.CLOSED) {
         this.logger.info("WebSocket is already closed.");
         resolve();
